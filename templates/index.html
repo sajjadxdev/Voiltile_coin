@@ -1,0 +1,986 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GulelX - Volatility Tracker</title>
+    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-bg: #0a0f1c;
+            --panel-bg: #1a1f2e;
+            --accent-cyan: #00ffff;
+            --accent-green: #00FF00;
+            --accent-red: #FF0000;
+            --text-primary: #ffffff;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Rajdhani', sans-serif;
+            background: var(--primary-bg);
+            color: var(--text-primary);
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 98%;
+            margin: 0 auto;
+            padding: 1rem;
+        }
+
+        .header {
+            padding: 1rem;
+            background: var(--panel-bg);
+            border-bottom: 2px solid var(--accent-cyan);
+            margin-bottom: 1rem;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 1.5rem;
+            color: var(--accent-cyan);
+        }
+
+        .status-section {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            margin-top: 0.5rem;
+        }
+
+        .status-badge {
+            padding: 0.5rem 1rem;
+            background: rgba(0, 255, 0, 0.1);
+            border: 1px solid var(--accent-green);
+            border-radius: 20px;
+            font-size: 0.85rem;
+        }
+
+        .symbol-count {
+            padding: 0.5rem 1rem;
+            background: rgba(0, 128, 255, 0.1);
+            border: 1px solid var(--accent-cyan);
+            border-radius: 20px;
+            font-size: 0.85rem;
+            color: var(--accent-cyan);
+        }
+
+        .info-banner {
+            background: var(--panel-bg);
+            border: 2px solid var(--accent-cyan);
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            text-align: center;
+        }
+
+        .info-banner h2 {
+            font-size: 1.3rem;
+            color: var(--accent-cyan);
+        }
+
+        .info-banner p {
+            font-size: 0.9rem;
+            color: var(--text-primary);
+        }
+
+        .error-message {
+            background: rgba(255, 0, 0, 0.1);
+            border: 1px solid var(--accent-red);
+            color: var(--accent-red);
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            display: none;
+        }
+
+        #bootstrap-progress {
+            margin-top: 1rem;
+            display: none;
+        }
+
+        .progress-container {
+            background: rgba(0,255,255,0.1);
+            border-radius: 20px;
+            height: 30px;
+            overflow: hidden;
+            border: 1px solid var(--accent-cyan);
+            position: relative;
+        }
+
+        #progress-bar {
+            background: var(--accent-cyan);
+            height: 100%;
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        #progress-text {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-weight: 600;
+            color: white;
+            font-size: 0.9rem;
+        }
+
+        .timeframe-selector {
+            display: flex;
+            gap: 0.5rem;
+            justify-content: center;
+            margin-bottom: 1rem;
+            padding: 1rem;
+            background: var(--panel-bg);
+            border-radius: 8px;
+            flex-wrap: wrap;
+        }
+
+        .tf-btn {
+            padding: 0.6rem 1.2rem;
+            background: rgba(0, 255, 255, 0.1);
+            border: 2px solid var(--accent-cyan);
+            color: var(--text-primary);
+            cursor: pointer;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .tf-btn.active {
+            background: var(--accent-cyan);
+            color: var(--primary-bg);
+        }
+
+        .search-box {
+            padding: 0.75rem;
+            width: 100%;
+            max-width: 400px;
+            background: var(--panel-bg);
+            border: 2px solid var(--accent-cyan);
+            color: var(--text-primary);
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            font-size: 0.95rem;
+        }
+
+        .table-section {
+            margin-bottom: 1rem;
+        }
+
+        .table-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.5rem;
+        }
+
+        .table-title {
+            color: var(--accent-cyan);
+            font-size: 1.2rem;
+            font-weight: 700;
+        }
+
+        .update-time {
+            font-size: 0.85rem;
+        }
+
+        .indicator-update-badge, .green-badge {
+            display: inline-block;
+            padding: 0.2rem 0.5rem;
+            background: rgba(0, 255, 0, 0.2);
+            border: 1px solid var(--accent-green);
+            border-radius: 4px;
+            font-size: 0.75rem;
+            margin-left: 0.5rem;
+        }
+
+        .table-responsive {
+            overflow-x: auto;
+            border: 2px solid var(--accent-cyan);
+            border-radius: 8px;
+        }
+
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.85rem;
+        }
+
+        .data-table th, .data-table td {
+            background: var(--panel-bg);
+            color: var(--text-primary);
+            padding: 0.7rem 0.5rem;
+            border: 1px solid rgba(0, 255, 255, 0.2);
+            text-align: center;
+            font-weight: 500;
+        }
+
+        .data-table th {
+            background: rgba(0, 255, 255, 0.2);
+            color: var(--accent-cyan);
+            font-weight: 700;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .data-table th:hover {
+            background: rgba(0, 255, 255, 0.3);
+        }
+
+        .up { 
+            color: var(--accent-green) !important; 
+            font-weight: 700; 
+        }
+        .down { 
+            color: var(--accent-red) !important; 
+            font-weight: 700; 
+        }
+        .neutral { 
+            color: var(--text-primary); 
+        }
+        .score-high { color: var(--accent-green); font-weight: 700; }
+        .score-medium { color: #FFD700; font-weight: 700; }
+        .score-low { color: var(--text-primary); }
+
+        .coin-link {
+            color: var(--accent-cyan);
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .coin-link:hover {
+            text-decoration: underline;
+        }
+
+        .load-more-btn {
+            display: block;
+            margin: 1rem auto;
+            padding: 0.75rem 2rem;
+            background: var(--accent-cyan);
+            color: var(--primary-bg);
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .load-more-btn:hover {
+            transform: scale(1.05);
+        }
+
+        .status-text {
+            text-align: center;
+            padding: 2rem;
+        }
+
+        .sort-indicator {
+            margin-left: 0.3rem;
+            font-size: 0.7rem;
+        }
+
+        .update-time {
+            font-size: 0.75rem;
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        @media (max-width: 768px) {
+            .header { text-align: center; }
+            .status-section { flex-direction: column; gap: 0.5rem; }
+            .timeframe-selector { gap: 0.3rem; }
+            .tf-btn { padding: 0.5rem 0.8rem; font-size: 0.8rem; }
+            .data-table { font-size: 0.75rem; }
+            .data-table th, .data-table td { padding: 0.5rem 0.3rem; }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Ghulel Volatility Tracker</h1>
+        <div class="status-section">
+            <div class="symbol-count" id="symbol-count">
+                <span id="symbol-count-text">0 Symbols</span>
+            </div>
+            <div class="status-badge" id="status">
+                <span id="status-text">Starting...</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="error-message" id="error-message"></div>
+
+        <div class="info-banner">
+            <h2>Real-Time Volatility Scanner</h2>
+            <p>Tracking USDT trading pairs across multiple timeframes</p>
+            <div id="bootstrap-progress">
+                <div class="progress-container">
+                    <div id="progress-bar"></div>
+                    <div id="progress-text">Initializing...</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="timeframe-selector">
+            <button class="tf-btn" data-tf="3m">3M</button>
+            <button class="tf-btn" data-tf="5m">5M</button>
+            <button class="tf-btn" data-tf="15m">15M</button>
+            <button class="tf-btn" data-tf="30m">30M</button>
+            <button class="tf-btn active" data-tf="1h">1H</button>
+            <button class="tf-btn" data-tf="2h">2H</button>
+            <button class="tf-btn" data-tf="4h">4H</button>
+        </div>
+
+        <div class="table-section">
+            <div class="table-header">
+                <h3 class="table-title" id="top-gainers-title">Top 20 Volatile Gainers (1 Hour)
+                    <span class="indicator-update-badge" id="indicator-update-badge" style="display: none;">
+                        Indicators Updating...
+                    </span>
+                </h3>
+            </div>
+            <div class="table-responsive">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Coin</th>
+                            <th data-sort-key="price" data-sort-dir="desc">Price <span class="sort-indicator">↓</span></th>
+                            <th data-sort-key="priceChangePercent" data-sort-dir="desc">24H % <span class="sort-indicator">↓</span></th>
+                            <th data-sort-key="price_change_1m" data-sort-dir="desc">1M % <span class="sort-indicator">↓</span></th>
+                            <th data-sort-key="price_change_5m" data-sort-dir="desc">5M % <span class="sort-indicator">↓</span></th>
+                            <th data-sort-key="price_change_15m" data-sort-dir="desc">15M % <span class="sort-indicator">↓</span></th>
+                            <th data-sort-key="price_change_30m" data-sort-dir="desc">30M % <span class="sort-indicator">↓</span></th>
+                            <th data-sort-key="atr_percent" data-sort-dir="desc">ATR% <span class="sort-indicator">↓</span></th>
+                            <th data-sort-key="bb_width" data-sort-dir="desc">BB Width <span class="sort-indicator">↓</span></th>
+                            <th data-sort-key="volume_surge" data-sort-dir="desc">Vol <span class="sort-indicator">↓</span></th>
+                            <th data-sort-key="gainer_score" data-sort-dir="desc">Score <span class="sort-indicator">↓</span></th>
+                        </tr>
+                    </thead>
+                    <tbody id="top-gainers-body">
+                        <tr><td colspan="12" class="status-text">Loading...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="table-section">
+            <div class="table-header">
+                <h3 class="table-title" id="consistent-gainers-title">Consistent Gainers (1 Hour)
+                    <span class="green-badge">3+ Positive Changes</span>
+                </h3>
+                <span class="update-time" id="gainers-update-time">Last update: --:--:--</span>
+            </div>
+            <div class="table-responsive">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Coin</th>
+                            <th data-sort-key="price" data-sort-dir="desc">Price <span class="sort-indicator">↓</span></th>
+                            <th data-sort-key="priceChangePercent" data-sort-dir="desc">24H % <span class="sort-indicator">↓</span></th>
+                            <th data-sort-key="price_change_1m" data-sort-dir="desc">1M % <span class="sort-indicator">↓</span></th>
+                            <th data-sort-key="price_change_5m" data-sort-dir="desc">5M % <span class="sort-indicator">↓</span></th>
+                            <th data-sort-key="price_change_15m" data-sort-dir="desc">15M % <span class="sort-indicator">↓</span></th>
+                            <th data-sort-key="price_change_30m" data-sort-dir="desc">30M % <span class="sort-indicator">↓</span></th>
+                            <th data-sort-key="positive_changes" data-sort-dir="desc">Positive Changes <span class="sort-indicator">↓</span></th>
+                        </tr>
+                    </thead>
+                    <tbody id="consistent-gainers-body">
+                        <tr><td colspan="9" class="status-text">Loading...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="table-section">
+            <div class="table-header">
+                <h3 class="table-title">All Market Data</h3>
+            </div>
+            <input type="text" id="search-input" placeholder="Search coin..." class="search-box">
+            <div class="table-responsive">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Coin</th>
+                            <th data-sort-key="price" data-sort-dir="desc">Price <span class="sort-indicator">↓</span></th>
+                            <th data-sort-key="priceChangePercent" data-sort-dir="desc">24H % <span class="sort-indicator">↓</span></th>
+                            <th data-sort-key="price_change_1m" data-sort-dir="desc">1M % <span class="sort-indicator">↓</span></th>
+                            <th data-sort-key="price_change_5m" data-sort-dir="desc">5M % <span class="sort-indicator">↓</span></th>
+                            <th data-sort-key="price_change_15m" data-sort-dir="desc">15M % <span class="sort-indicator">↓</span></th>
+                            <th data-sort-key="price_change_30m" data-sort-dir="desc">30M % <span class="sort-indicator">↓</span></th>
+                            <th data-sort-key="atr_percent" data-sort-dir="desc">ATR% <span class="sort-indicator">↓</span></th>
+                            <th data-sort-key="bb_width" data-sort-dir="desc">BB Width <span class="sort-indicator">↓</span></th>
+                            <th data-sort-key="volume_surge" data-sort-dir="desc">Vol <span class="sort-indicator">↓</span></th>
+                            <th data-sort-key="gainer_score" data-sort-dir="desc">Score <span class="sort-indicator">↓</span></th>
+                        </tr>
+                    </thead>
+                    <tbody id="all-data-body">
+                        <tr><td colspan="12" class="status-text">Loading...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+            <button class="load-more-btn" id="load-more-btn">Load More</button>
+        </div>
+    </div>
+
+    <script>
+        let currentTimeframe = '1h';
+        let allCoins = [];
+        let topGainers = [];
+        let consistentGainers = [];
+        let displayedCoins = [];
+        let searchValue = '';
+        let currentSortKey = {top: 'gainer_score', all: 'gainer_score', consistent: 'positive_changes'};
+        let currentSortDir = {top: 'desc', all: 'desc', consistent: 'desc'};
+        let ws = null;
+        let wsReconnectAttempts = 0;
+        let wsReconnectTimer = null;
+        let wsUpdateTimer = null;
+        const itemsPerPage = 25;
+        const MAX_WS_RECONNECT = 5;
+        const WS_BUFFER_DELAY = 50;
+
+        const timeframeDisplay = {
+            '3m': '3 Minutes',
+            '5m': '5 Minutes',
+            '15m': '15 Minutes',
+            '30m': '30 Minutes',
+            '1h': '1 Hour',
+            '2h': '2 Hours',
+            '4h': '4 Hours'
+        };
+
+        function debounce(func, wait) {
+            let timeout;
+            return function executedFunction(...args) {
+                const later = () => {
+                    clearTimeout(timeout);
+                    func(...args);
+                };
+                clearTimeout(timeout);
+                timeout = setTimeout(later, wait);
+            };
+        }
+
+        function showError(message) {
+            const errorEl = document.getElementById('error-message');
+            errorEl.textContent = message;
+            errorEl.style.display = 'block';
+            setTimeout(() => {
+                errorEl.style.display = 'none';
+            }, 5000);
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            fetch('/api/start-bootstrap', { method: 'POST' })
+                .then(r => r.json())
+                .then(data => {
+                    document.getElementById('bootstrap-progress').style.display = 'block';
+                    checkBootstrapStatus();
+                })
+                .catch(err => showError('Failed to start bootstrap'));
+            
+            fetch('/api/start-websockets', { method: 'POST' })
+                .then(r => r.json())
+                .then(data => {
+                    document.getElementById('status-text').textContent = 'Connected';
+                    initializeWebSocket();
+                    setupSearch();
+                    setupTimeframeButtons();
+                    fetchData();
+                    setInterval(fetchData, 60000);
+                })
+                .catch(err => showError('Failed to start websockets'));
+        });
+
+        function checkBootstrapStatus() {
+            const progressDiv = document.getElementById('bootstrap-progress');
+            const progressBar = document.getElementById('progress-bar');
+            const progressText = document.getElementById('progress-text');
+            const interval = setInterval(() => {
+                fetch('/api/bootstrap-status')
+                    .then(r => r.json())
+                    .then(data => {
+                        const percent = data.total > 0 ? (data.current / data.total * 100).toFixed(1) : 0;
+                        progressBar.style.width = percent + '%';
+                        if (data.status.includes('Complete - WebSockets Active')) {
+                            progressText.textContent = 'Monitoring all timeframes';
+                            clearInterval(interval);
+                            startRefreshCycleMonitoring();
+                        } else {
+                            progressText.textContent = data.status + ' - ' + percent + '%';
+                        }
+                    })
+                    .catch(err => {
+                        console.error('Bootstrap status error:', err);
+                    });
+            }, 2000);
+        }
+
+        function startRefreshCycleMonitoring() {
+            setInterval(() => {
+                fetch('/api/health')
+                    .then(r => r.json())
+                    .then(data => {
+                        const cycles = data.refresh_cycles;
+                        let statusText = '';
+                        
+                        for (const [timeframe, info] of Object.entries(cycles)) {
+                            if (info.status === 'running') {
+                                statusText += `${info.status} | `;
+                                const percent = info.percent ? info.percent.toFixed(1) : '0.0';
+                                statusText += `${info.timeframe}: ${info.current}/${info.total} (${percent}%)\n`;
+                            }
+                        }
+                        
+                        if (statusText) {
+                            document.getElementById('progress-text').textContent = statusText;
+                            document.getElementById('bootstrap-progress').style.display = 'block';
+                        }
+                    })
+                    .catch(err => {
+                        console.error('Refresh cycle status error:', err);
+                    });
+            }, 2000);
+        }
+
+        function updateSymbolCount(count) {
+            document.getElementById('symbol-count-text').textContent = `${count} Symbols`;
+        }
+
+        function initializeWebSocket() {
+            if (ws) {
+                try {
+                    ws.close();
+                } catch (e) {}
+            }
+
+            ws = new EventSource('/ws');
+            
+            ws.onmessage = function(event) {
+                try {
+                    const update = JSON.parse(event.data);
+                    if (update.type === 'heartbeat') return;
+                    
+                    if (update.type === 'price_update' && Math.abs(update.change) > 0.01) {
+                        const coin = allCoins.find(c => c.symbol === update.symbol);
+                        if (coin) {
+                            coin.price = update.price;
+                            coin.priceChangePercent = update.change;
+                            consistentGainers = calculateConsistentGainers(allCoins);
+                            debouncedUpdateTables();
+                        }
+                    }
+                    else if (update.type === 'indicator_update' && update.timeframe === currentTimeframe) {
+                        const coin = allCoins.find(c => c.symbol === update.symbol);
+                        if (coin) {
+                            showIndicatorUpdateBadge();
+                            coin.atr_percent = update.atr_percent;
+                            coin.bb_width = update.bb_width;
+                            coin.volume_surge = update.volume_surge;
+                            coin.gainer_score = update.gainer_score;
+                            coin.price_change_1m = update.price_change_1m;
+                            coin.price_change_5m = update.price_change_5m;
+                            coin.price_change_15m = update.price_change_15m;
+                            coin.price_change_30m = update.price_change_30m;
+                            // Recalculate consistent gainers when indicators update
+                            consistentGainers = calculateConsistentGainers(allCoins);
+                            renderConsistentGainers();
+                            coin.price_change_30m = update.price_change_30m;
+                            coin.last_indicator_update = update.last_indicator_update;
+                            debouncedUpdateTables();
+                        }
+                    }
+                    else if (update.type === 'price_change_update' && update.timeframe === currentTimeframe) {
+                        const coin = allCoins.find(c => c.symbol === update.symbol);
+                        if (coin) {
+                            coin.price_change_1m = update.price_change_1m;
+                            coin.price_change_5m = update.price_change_5m;
+                            coin.price_change_15m = update.price_change_15m;
+                            coin.price_change_30m = update.price_change_30m;
+                            coin.priceChangePercent = update.price_change_24h;
+                            // Recalculate consistent gainers when price changes update
+                            consistentGainers = calculateConsistentGainers(allCoins);
+                            renderConsistentGainers();
+                            coin.price_change_1m = update.price_change_1m;
+                            coin.price_change_5m = update.price_change_5m;
+                            coin.price_change_15m = update.price_change_15m;
+                            coin.price_change_30m = update.price_change_30m;
+                            debouncedUpdateTables();
+                        }
+                    }
+                    
+                    wsReconnectAttempts = 0;
+                } catch (e) {
+                    console.error('WS parse error:', e);
+                }
+            };
+            
+            ws.onerror = () => {
+                document.getElementById('status-text').textContent = 'Disconnected';
+                attemptWSReconnect();
+            };
+
+            ws.onopen = () => {
+                document.getElementById('status-text').textContent = 'Connected';
+                wsReconnectAttempts = 0;
+            };
+        }
+
+        function attemptWSReconnect() {
+            if (wsReconnectAttempts >= MAX_WS_RECONNECT) {
+                showError('WebSocket connection lost. Please refresh the page.');
+                return;
+            }
+
+            wsReconnectAttempts++;
+            const delay = Math.min(1000 * Math.pow(2, wsReconnectAttempts), 30000);
+            
+            if (wsReconnectTimer) clearTimeout(wsReconnectTimer);
+            
+            wsReconnectTimer = setTimeout(() => {
+                console.log(`Reconnecting WebSocket (attempt ${wsReconnectAttempts})...`);
+                initializeWebSocket();
+            }, delay);
+        }
+
+        function showIndicatorUpdateBadge() {
+            const badge = document.getElementById('indicator-update-badge');
+            badge.style.display = 'inline-block';
+            setTimeout(() => badge.style.display = 'none', 2000);
+        }
+
+        function setupTimeframeButtons() {
+            document.querySelectorAll('.tf-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const tf = this.getAttribute('data-tf');
+                    switchTimeframe(tf);
+                });
+            });
+        }
+
+        function switchTimeframe(tf) {
+            currentTimeframe = tf;
+            document.querySelectorAll('.tf-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelector(`.tf-btn[data-tf="${tf}"]`).classList.add('active');
+            
+            document.getElementById('top-gainers-title').innerHTML = `Top 20 Volatile Gainers (${timeframeDisplay[tf]}) <span class="indicator-update-badge" id="indicator-update-badge" style="display: none;">Indicators Updating...</span>`;
+            document.getElementById('consistent-gainers-title').innerHTML = `Consistent Gainers (${timeframeDisplay[tf]}) <span class="green-badge">3+ Positive Changes</span>`;
+            
+            // Clear existing data before fetching new timeframe data
+            consistentGainers = [];
+            renderConsistentGainers();
+            
+            fetchData();
+        }
+
+        function calculateConsistentGainers(coins) {
+            const getTimeframeChanges = (coin) => {
+                // Ensure all values are properly converted to numbers
+                const changes = {
+                    '1m': parseFloat(coin.price_change_1m) || 0,
+                    '5m': parseFloat(coin.price_change_5m) || 0,
+                    '15m': parseFloat(coin.price_change_15m) || 0,
+                    '30m': parseFloat(coin.price_change_30m) || 0,
+                    '24h': parseFloat(coin.priceChangePercent) || 0
+                };
+
+                switch(currentTimeframe) {
+                    case '3m':
+                        return [changes['1m']];
+                    case '5m':
+                        return [changes['1m'], changes['5m']];
+                    case '15m':
+                        return [changes['1m'], changes['5m'], changes['15m']];
+                    case '30m':
+                        return [changes['1m'], changes['5m'], changes['15m'], changes['30m']];
+                    default:
+                        return [changes['1m'], changes['5m'], changes['15m'], changes['30m'], changes['24h']];
+                }
+            };
+
+            return coins.map(coin => {
+                const changes = getTimeframeChanges(coin);
+                const positiveChanges = changes.filter(change => change > 0).length;
+                const maxPossibleChanges = changes.length;
+                return {
+                    ...coin,
+                    positive_changes: positiveChanges,
+                    max_changes: maxPossibleChanges
+                };
+            }).filter(coin => coin.positive_changes >= Math.max(2, Math.floor(coin.max_changes * 0.6)))
+            .sort((a, b) => (b.positive_changes / b.max_changes) - (a.positive_changes / a.max_changes));
+        }
+
+        function renderConsistentGainers() {
+            const tbody = document.getElementById('consistent-gainers-body');
+            if (!consistentGainers || !Array.isArray(consistentGainers) || consistentGainers.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="9" class="status-text">No consistent gainers found for ' + timeframeDisplay[currentTimeframe] + '</td></tr>';
+                return;
+            }
+            
+            const now = new Date().toLocaleTimeString();
+            document.getElementById('gainers-update-time').textContent = 'Last update: ' + now;
+
+            // Debug log
+            console.log(`Rendering ${consistentGainers.length} consistent gainers for ${currentTimeframe}`);
+
+            const rows = consistentGainers.slice(0, 50).map((coin, idx) => {
+                return `
+                    <tr>
+                        <td>${idx + 1}</td>
+                        <td><a href="https://www.binance.com/en/trade/${coin.symbol}_USDT" target="_blank" class="coin-link">${coin.symbol}</a></td>
+                        <td class="${getChangeClass(coin.priceChangePercent)}">${formatPrice(coin.price)}</td>
+                        <td class="${getChangeClass(coin.priceChangePercent)}">${coin.priceChangePercent.toFixed(2)}%</td>
+                        <td class="${getChangeClass(coin.price_change_1m || 0)}">${(coin.price_change_1m || 0).toFixed(2)}%</td>
+                        <td class="${getChangeClass(coin.price_change_5m || 0)}">${(coin.price_change_5m || 0).toFixed(2)}%</td>
+                        <td class="${getChangeClass(coin.price_change_15m || 0)}">${(coin.price_change_15m || 0).toFixed(2)}%</td>
+                        <td class="${getChangeClass(coin.price_change_30m || 0)}">${(coin.price_change_30m || 0).toFixed(2)}%</td>
+                        <td class="score-high">${coin.positive_changes}/${coin.max_changes}</td>
+                    </tr>
+                `;
+            }).join('');
+            
+            tbody.innerHTML = rows;
+        }
+
+        function fetchData() {
+            Promise.all([
+                fetch('/api/data/' + currentTimeframe).then(r => {
+                    if (!r.ok) throw new Error('Failed to fetch data');
+                    return r.json();
+                }),
+                fetch('/api/top-gainers/' + currentTimeframe).then(r => {
+                    if (!r.ok) throw new Error('Failed to fetch top gainers');
+                    return r.json();
+                }),
+                fetch('/api/consistent-gainers/' + currentTimeframe).then(r => {
+                    if (!r.ok) throw new Error('Failed to fetch consistent gainers');
+                    return r.json();
+                })
+            ])
+            .then(([allData, topData, consistentData]) => {
+                allCoins = allData;
+                topGainers = topData.slice(0, 20);
+                consistentGainers = consistentData;
+                
+                applySorting('all');
+                applySorting('consistent');
+                
+                const filtered = allCoins.filter(c => c.symbol.toLowerCase().includes(searchValue));
+                displayedCoins = filtered.slice(0, itemsPerPage);
+                
+                updateSymbolCount(allCoins.length);
+                renderConsistentGainers();
+                renderTopGainers();
+                renderAllData();
+                document.getElementById('load-more-btn').style.display = filtered.length > itemsPerPage ? 'block' : 'none';
+            })
+            .catch(error => {
+                console.error('Fetch error:', error);
+                showError('Failed to fetch data. Retrying...');
+            });
+        }
+
+        function setupSearch() {
+            const searchInput = document.getElementById('search-input');
+            searchInput.addEventListener('input', debounce((e) => {
+                searchValue = e.target.value.toLowerCase();
+                const filtered = allCoins.filter(c => c.symbol.toLowerCase().includes(searchValue));
+                displayedCoins = filtered.slice(0, itemsPerPage);
+                renderAllData();
+                document.getElementById('load-more-btn').style.display = filtered.length > itemsPerPage ? 'block' : 'none';
+            }, 300));
+        }
+
+        function loadMore() {
+            const filtered = allCoins.filter(c => c.symbol.toLowerCase().includes(searchValue));
+            displayedCoins = filtered.slice(0, displayedCoins.length + itemsPerPage);
+            renderAllData();
+            if (displayedCoins.length >= filtered.length) {
+                document.getElementById('load-more-btn').style.display = 'none';
+            }
+        }
+
+        document.getElementById('load-more-btn').addEventListener('click', loadMore);
+
+        function formatPrice(price, oldPrice) {
+            let formattedPrice;
+            if (price >= 100) formattedPrice = price.toFixed(2);
+            else if (price >= 10) formattedPrice = price.toFixed(3);
+            else if (price >= 1) formattedPrice = price.toFixed(4);
+            else if (price >= 0.1) formattedPrice = price.toFixed(5);
+            else if (price >= 0.01) formattedPrice = price.toFixed(6);
+            else formattedPrice = price.toFixed(8);
+            return formattedPrice;
+        }
+
+        function getChangeClass(value) {
+            if (!value || value === 0) return 'neutral';
+            return value > 0 ? 'up' : 'down';
+        }
+
+        function getScoreClass(score) {
+            if (score >= 60) return 'score-high';
+            if (score >= 30) return 'score-medium';
+            return 'score-low';
+        }
+
+        function applySorting(tableId) {
+            const dataArray = tableId === 'top' ? topGainers : tableId === 'consistent' ? consistentGainers : allCoins;
+            const key = currentSortKey[tableId];
+            const dir = currentSortDir[tableId];
+
+            dataArray.sort((a, b) => {
+                let valA = a[key] || 0;
+                let valB = b[key] || 0;
+                return dir === 'desc' ? (valB > valA ? 1 : -1) : (valA > valB ? 1 : -1);
+            });
+        }
+
+        function sortTable(tableId, key) {
+            const tbodyId = tableId === 'top' ? 'top-gainers-body' : tableId === 'consistent' ? 'consistent-gainers-body' : 'all-data-body';
+            const tbody = document.getElementById(tbodyId);
+            const header = tbody.parentElement.querySelector(`th[data-sort-key="${key}"]`);
+            
+            let dir = currentSortDir[tableId];
+            if (currentSortKey[tableId] === key) {
+                dir = dir === 'desc' ? 'asc' : 'desc';
+            } else {
+                dir = 'desc';
+            }
+            
+            currentSortKey[tableId] = key;
+            currentSortDir[tableId] = dir;
+            
+            tbody.parentElement.querySelectorAll('th .sort-indicator').forEach(ind => ind.textContent = '');
+            if (header) {
+                header.querySelector('.sort-indicator').textContent = dir === 'desc' ? '↓' : '↑';
+            }
+            
+            applySorting(tableId);
+            
+            if (tableId === 'top') {
+                renderTopGainers();
+            } else if (tableId === 'consistent') {
+                renderConsistentGainers();
+            } else {
+                const filtered = allCoins.filter(c => c.symbol.toLowerCase().includes(searchValue));
+                displayedCoins = filtered.slice(0, displayedCoins.length || itemsPerPage);
+                renderAllData();
+            }
+        }
+
+        function renderTopGainers() {
+            const tbody = document.getElementById('top-gainers-body');
+            if (topGainers.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="12" class="status-text">No data available</td></tr>';
+                return;
+            }
+
+            const rows = topGainers.map((coin, idx) => {
+                const atrPercent = coin.atr_percent || 0;
+                const bbWidth = coin.bb_width || 0;
+                const volSurge = coin.volume_surge || 1.0;
+                const score = coin.gainer_score || 0;
+                
+                return `
+                    <tr>
+                        <td>${idx + 1}</td>
+                        <td><a href="https://www.binance.com/en/trade/${coin.symbol}_USDT" target="_blank" class="coin-link">${coin.symbol}</a></td>
+                        <td class="${getChangeClass(coin.priceChangePercent)}">${formatPrice(coin.price)}</td>
+                        <td class="${getChangeClass(coin.priceChangePercent)}">${coin.priceChangePercent.toFixed(2)}%</td>
+                        <td class="${getChangeClass(coin.price_change_1m || 0)}">${(coin.price_change_1m || 0).toFixed(2)}%</td>
+                        <td class="${getChangeClass(coin.price_change_5m || 0)}">${(coin.price_change_5m || 0).toFixed(2)}%</td>
+                        <td class="${getChangeClass(coin.price_change_15m || 0)}">${(coin.price_change_15m || 0).toFixed(2)}%</td>
+                        <td class="${getChangeClass(coin.price_change_30m || 0)}">${(coin.price_change_30m || 0).toFixed(2)}%</td>
+                        <td class="up">${atrPercent.toFixed(2)}%</td>
+                        <td class="up">${bbWidth.toFixed(2)}%</td>
+                        <td class="${volSurge > 1.5 ? 'up' : 'neutral'}">${volSurge.toFixed(2)}x</td>
+                        <td class="${getScoreClass(score)}">${score.toFixed(1)}</td>
+                    </tr>
+                `;
+            }).join('');
+            
+            tbody.innerHTML = rows;
+        }
+
+        function renderAllData() {
+            const tbody = document.getElementById('all-data-body');
+            if (displayedCoins.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="12" class="status-text">No coins found</td></tr>';
+                return;
+            }
+
+            const rows = displayedCoins.map((coin, idx) => {
+                const atrPercent = coin.atr_percent || 0;
+                const bbWidth = coin.bb_width || 0;
+                const volSurge = coin.volume_surge || 1.0;
+                const score = coin.gainer_score || 0;
+                
+                return `
+                    <tr>
+                        <td>${idx + 1}</td>
+                        <td><a href="https://www.binance.com/en/trade/${coin.symbol}_USDT" target="_blank" class="coin-link">${coin.symbol}</a></td>
+                        <td class="${getChangeClass(coin.priceChangePercent)}">${formatPrice(coin.price)}</td>
+                        <td class="${getChangeClass(coin.priceChangePercent)}">${coin.priceChangePercent.toFixed(2)}%</td>
+                        <td class="${getChangeClass(coin.price_change_1m || 0)}">${(coin.price_change_1m || 0).toFixed(2)}%</td>
+                        <td class="${getChangeClass(coin.price_change_5m || 0)}">${(coin.price_change_5m || 0).toFixed(2)}%</td>
+                        <td class="${getChangeClass(coin.price_change_15m || 0)}">${(coin.price_change_15m || 0).toFixed(2)}%</td>
+                        <td class="${getChangeClass(coin.price_change_30m || 0)}">${(coin.price_change_30m || 0).toFixed(2)}%</td>
+                        <td class="up">${atrPercent.toFixed(2)}%</td>
+                        <td class="up">${bbWidth.toFixed(2)}%</td>
+                        <td class="${volSurge > 1.5 ? 'up' : 'neutral'}">${volSurge.toFixed(2)}x</td>
+                        <td class="${getScoreClass(score)}">${score.toFixed(1)}</td>
+                    </tr>
+                `;
+            }).join('');
+            
+            tbody.innerHTML = rows;
+        }
+
+        const debouncedUpdateTables = debounce(() => {
+            topGainers = allCoins
+                .filter(c => c.gainer_score > 0)
+                .sort((a, b) => b.gainer_score - a.gainer_score)
+                .slice(0, 20);
+            
+            consistentGainers = calculateConsistentGainers(allCoins);
+            
+            renderConsistentGainers();
+            renderTopGainers();
+            renderAllData();
+        }, 500);
+
+        setTimeout(() => {
+            const topTable = document.querySelector('#top-gainers-body').parentElement;
+            topTable.querySelectorAll('th[data-sort-key]').forEach(th => {
+                th.addEventListener('click', function() {
+                    sortTable('top', this.getAttribute('data-sort-key'));
+                });
+            });
+
+            const consistentTable = document.querySelector('#consistent-gainers-body').parentElement;
+            consistentTable.querySelectorAll('th[data-sort-key]').forEach(th => {
+                th.addEventListener('click', function() {
+                    sortTable('consistent', this.getAttribute('data-sort-key'));
+                });
+            });
+
+            const allTable = document.querySelector('#all-data-body').parentElement;
+            allTable.querySelectorAll('th[data-sort-key]').forEach(th => {
+                th.addEventListener('click', function() {
+                    sortTable('all', this.getAttribute('data-sort-key'));
+                });
+            });
+        }, 100);
+    </script>
+</body>
+</html>
