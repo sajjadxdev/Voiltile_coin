@@ -364,6 +364,16 @@ def initialize_state(symbol: str, timeframe: str, data: Dict[str, List]) -> bool
         for timestamp, price in candle_price_history:
             tick_price_history.append((timestamp, price))
 
+        p_24h = ((current_price - closes_list[0]) / closes_list[0] * 100) if (len(closes_list) > 0 and closes_list[0] > 0) else 0.0
+        pc_1m = ((current_price - closes_list[-2]) / closes_list[-2] * 100) if (len(closes_list) >= 2 and closes_list[-2] > 0) else 0.0
+        pc_5m = ((current_price - closes_list[-6]) / closes_list[-6] * 100) if (len(closes_list) >= 6 and closes_list[-6] > 0) else pc_1m
+        pc_15m = ((current_price - closes_list[-16]) / closes_list[-16] * 100) if (len(closes_list) >= 16 and closes_list[-16] > 0) else pc_5m
+        pc_30m = ((current_price - closes_list[-31]) / closes_list[-31] * 100) if (len(closes_list) >= 31 and closes_list[-31] > 0) else pc_15m
+
+        with ws_tickers_lock:
+            if symbol not in ws_tickers or ws_tickers[symbol].get('c', 0) <= 0:
+                ws_tickers[symbol] = {'c': current_price, 'P': p_24h}
+
         new_state = {
             'prev_close': current_price,
             'closes': closes,
@@ -379,10 +389,11 @@ def initialize_state(symbol: str, timeframe: str, data: Dict[str, List]) -> bool
             'historical_volatility': hv,
             'rsi': rsi,
             'gainer_score': gainer_score,
-            'price_change_1m': 0.0,
-            'price_change_5m': 0.0,
-            'price_change_15m': 0.0,
-            'price_change_30m': 0.0,
+            'price_change_24h': p_24h,
+            'price_change_1m': pc_1m,
+            'price_change_5m': pc_5m,
+            'price_change_15m': pc_15m,
+            'price_change_30m': pc_30m,
             'last_candle_time': now,
             'candle_price_history': candle_price_history,
             'tick_price_history': tick_price_history,
@@ -1355,6 +1366,8 @@ def get_data(timeframe: str):
             else:
                 # Copy only what we need
                 state = STATE[symbol][timeframe]
+                if price <= 0:
+                    price = state.get('prev_close', 0.0)
                 state_data = {
                     'price_change_1m': state.get('price_change_1m', 0),
                     'price_change_5m': state.get('price_change_5m', 0),
@@ -1433,6 +1446,11 @@ def get_top_gainers(timeframe: str):
                 continue
 
             state = STATE[symbol][normalized_tf]
+            if price <= 0:
+                price = state.get('prev_close', 0.0)
+            price_change_24h = safe_float(ticker.get('P', 0))
+            if price_change_24h == 0 and 'price_change_24h' in state:
+                price_change_24h = state.get('price_change_24h', 0.0)
             gainer_score = state.get('gainer_score', 0)
 
             if gainer_score > 0:
@@ -1457,7 +1475,7 @@ def get_top_gainers(timeframe: str):
             gainer_list.append({
                 'symbol': symbol,
                 'price': price,
-                'priceChangePercent': safe_float(ticker.get('P', 0)),
+                'priceChangePercent': price_change_24h,
                 **state_data
             })
 
@@ -1499,6 +1517,10 @@ def get_consistent_gainers(timeframe: str):
                 continue
 
             state = STATE[symbol][normalized_tf]
+            if price <= 0:
+                price = state.get('prev_close', 0.0)
+            if price_change_24h == 0 and 'price_change_24h' in state:
+                price_change_24h = state.get('price_change_24h', 0.0)
 
             # Calculate positive changes inside lock
             changes = [

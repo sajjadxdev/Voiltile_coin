@@ -512,10 +512,18 @@
                         progressBar.style.width = percent + '%';
                         if (data.status.includes('Complete - WebSockets Active')) {
                             progressText.textContent = 'Monitoring all timeframes';
+                            progressBar.style.width = '100%';
                             clearInterval(interval);
+                            fetchData();
+                            setTimeout(() => {
+                                progressDiv.style.display = 'none';
+                            }, 3000);
                             startRefreshCycleMonitoring();
                         } else {
                             progressText.textContent = data.status + ' - ' + percent + '%';
+                            if (data.current > 0) {
+                                fetchData();
+                            }
                         }
                     })
                     .catch(err => {
@@ -533,7 +541,7 @@
                         let statusText = '';
                         
                         for (const [timeframe, info] of Object.entries(cycles)) {
-                            if (info.status === 'running') {
+                            if (info.status === 'running' && info.current > 0) {
                                 statusText += `${info.status} | `;
                                 const percent = info.percent ? info.percent.toFixed(1) : '0.0';
                                 statusText += `${info.timeframe}: ${info.current}/${info.total} (${percent}%)\n`;
@@ -548,7 +556,7 @@
                     .catch(err => {
                         console.error('Refresh cycle status error:', err);
                     });
-            }, 2000);
+            }, 5000);
         }
 
         function updateSymbolCount(count) {
@@ -767,6 +775,9 @@
                 })
             ])
             .then(([allData, topData, consistentData]) => {
+                const errorEl = document.getElementById('error-message');
+                errorEl.style.display = 'none';
+                
                 allCoins = allData;
                 topGainers = topData.slice(0, 20);
                 consistentGainers = consistentData;
@@ -785,7 +796,8 @@
             })
             .catch(error => {
                 console.error('Fetch error:', error);
-                showError('Failed to fetch data. Retrying...');
+                showError('Initializing market data, retrying in 3s...');
+                setTimeout(fetchData, 3000);
             });
         }
 
